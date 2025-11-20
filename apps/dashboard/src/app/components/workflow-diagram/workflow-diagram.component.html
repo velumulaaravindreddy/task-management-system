@@ -1,0 +1,98 @@
+<div class="workflow-container">
+  <div class="workflow-header">
+    <h3 class="workflow-title">Workflow Status</h3>
+    <p class="workflow-subtitle" *ngIf="currentStatus">
+      Current: <span class="current-status-label">{{ getNode(currentStatus)?.label }}</span>
+    </p>
+    <p class="workflow-subtitle" *ngIf="!currentStatus">
+      Complete workflow overview - Click on nodes to see available transitions
+    </p>
+  </div>
+
+  <div class="workflow-diagram-wrapper">
+    <div class="workflow-diagram">
+      <!-- SVG for transitions -->
+      <svg class="workflow-svg" viewBox="0 0 1600 300" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker
+          id="arrowhead"
+          markerWidth="10"
+          markerHeight="10"
+          refX="9"
+          refY="3"
+          orient="auto"
+        >
+          <polygon points="0 0, 10 3, 0 6" fill="#94a3b8" />
+        </marker>
+      </defs>
+      
+      <!-- Draw transitions -->
+      <g class="transitions">
+        <path
+          *ngFor="let transition of transitions"
+          [attr.d]="getTransitionPath(transition.from, transition.to)"
+          class="transition-path"
+          [class.transition-available]="isTransitionHighlighted(transition.from, transition.to)"
+          [class.transition-current]="currentStatus === transition.from"
+          marker-end="url(#arrowhead)"
+        />
+      </g>
+    </svg>
+
+    <!-- Workflow Nodes -->
+    <div class="workflow-nodes">
+      <div
+        *ngFor="let node of nodes"
+        class="workflow-node"
+        [class.node-current]="isCurrentStatus(node.status)"
+        [class.node-available]="isAvailableTransition(node.status)"
+        [class.node-hovered]="hoveredNode === node.status"
+        [class.node-selected]="!currentStatus && selectedNode === node.status"
+        [style.left.px]="node.position.x"
+        [style.top.px]="node.position.y"
+        [style.border-color]="node.borderColor"
+        [style.background-color]="node.bgColor"
+        [style.color]="node.color"
+        (click)="onNodeClick(node.status); $event.stopPropagation()"
+        (mouseenter)="onNodeHover(node.status)"
+        (mouseleave)="onNodeHover(null)"
+        [title]="getNodeTooltip(node.status)"
+      >
+        <div class="node-icon">{{ node.icon }}</div>
+        <div class="node-label">{{ node.label }}</div>
+        <div class="node-description" *ngIf="node.description">{{ node.description }}</div>
+        <div *ngIf="isCurrentStatus(node.status)" class="node-badge-current">Current</div>
+        <div *ngIf="isAvailableTransition(node.status) && !isCurrentStatus(node.status) && currentStatus" class="node-badge-available">
+          <svg class="badge-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Available Actions -->
+  <div class="workflow-actions" *ngIf="availableTransitions.length > 0">
+    <h4 class="actions-title">
+      <span *ngIf="currentStatus">Available Transitions from Current Status</span>
+      <span *ngIf="!currentStatus && selectedNode">
+        <span class="status-emoji">{{ getNode(selectedNode)?.icon }}</span>
+        Transitions from {{ getNode(selectedNode)?.label }}
+      </span>
+    </h4>
+    <div class="actions-list">
+      <button
+        *ngFor="let status of availableTransitions"
+        class="action-btn"
+        (click)="onNodeClick(status); $event.stopPropagation()"
+        [style.border-color]="getNode(status)?.borderColor"
+        [style.color]="getNode(status)?.color"
+        [style.background-color]="getNode(status)?.bgColor"
+      >
+        <span class="action-icon">{{ getNode(status)?.icon }}</span>
+        <span>{{ getNode(status)?.label }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+

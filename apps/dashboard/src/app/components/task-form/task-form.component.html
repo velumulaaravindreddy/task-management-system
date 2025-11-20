@@ -1,0 +1,158 @@
+<div class="modal-overlay" (click)="close.emit()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title">
+          {{ task ? 'Edit Task' : 'Create New Task' }}
+        </h2>
+        <p class="modal-subtitle">{{ task ? 'Update task information' : 'Add a new task to your workspace' }}</p>
+      </div>
+      <button (click)="close.emit()" class="close-btn">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <form [formGroup]="taskForm" (ngSubmit)="onSubmit()" class="form">
+        
+        <!-- Title -->
+        <div class="form-group">
+          <label for="title" class="form-label">
+            Task Title <span class="required">*</span>
+          </label>
+          <input
+            id="title"
+            type="text"
+            formControlName="title"
+            class="form-input"
+            placeholder="Enter a descriptive title for your task"
+          />
+          <div *ngIf="taskForm.get('title')?.invalid && taskForm.get('title')?.touched" class="error-text">
+            Title is required
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label for="description" class="form-label">Description</label>
+          <textarea
+            id="description"
+            formControlName="description"
+            rows="4"
+            class="form-textarea"
+            placeholder="Add details, notes, or requirements for this task..."
+          ></textarea>
+        </div>
+
+        <!-- Workflow Diagram -->
+        <div class="form-group workflow-group" *ngIf="task">
+          <label class="form-label">Workflow Status</label>
+          <app-workflow-diagram
+            [currentStatus]="task.status"
+            [taskId]="task.id"
+            (statusChange)="onStatusChange($event)"
+          ></app-workflow-diagram>
+        </div>
+
+        <!-- Status and Priority -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="status" class="form-label">Status</label>
+            <select id="status" formControlName="status" class="form-select">
+              <option value="new">New</option>
+              <option value="awaiting_approval">Awaiting Approval</option>
+              <option value="awaiting_board_approval">Awaiting Board Approval</option>
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="verify">Verify</option>
+              <option value="closed">Closed</option>
+              <option value="on_hold">On Hold</option>
+              <option value="waiting_for_customer">Waiting for Customer</option>
+              <option value="waiting_for_support">Waiting for Support</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="priority" class="form-label">Priority</label>
+            <select id="priority" formControlName="priority" class="form-select">
+              <option [value]="1">Low</option>
+              <option [value]="2">Medium</option>
+              <option [value]="3">High</option>
+              <option [value]="4">Urgent</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Category and Assignee -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="category" class="form-label">Category</label>
+            <select id="category" formControlName="category" class="form-select">
+              <option value="">Select Category</option>
+              <option value="Frontend">Frontend</option>
+              <option value="Backend">Backend</option>
+              <option value="Design">Design</option>
+              <option value="Marketing">Marketing</option>
+              <option value="QA">QA</option>
+              <option value="DevOps">DevOps</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="assignedTo" class="form-label">Assigned To</label>
+            <select id="assignedTo" formControlName="assignedToId" class="form-select">
+              <option value="">Unassigned</option>
+              <option *ngFor="let user of users" [value]="user.id">
+                {{ user.firstName }} {{ user.lastName }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Due Date -->
+        <div class="form-group">
+          <label for="dueDate" class="form-label">Due Date <span class="form-label-optional">(Optional)</span></label>
+          <input
+            id="dueDate"
+            type="date"
+            formControlName="dueDate"
+            class="form-input"
+          />
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="error" class="error-box">
+          <svg class="error-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          </svg>
+          <p>{{ error }}</p>
+        </div>
+
+            <!-- Actions -->
+            <div class="form-actions">
+              <button type="button" (click)="close.emit()" class="btn btn-cancel" title="Close (Esc)">
+                Cancel <span class="keyboard-hint">Esc</span>
+              </button>
+              <button type="submit" [disabled]="taskForm.invalid || loading" class="btn btn-submit" title="Save (Ctrl+Enter or Cmd+Enter)">
+                <span *ngIf="!loading">{{ task ? 'Save Changes' : 'Create Task' }}</span>
+                <span *ngIf="loading" class="loading-wrapper">
+                  <svg class="spinner" fill="none" viewBox="0 0 24 24">
+                    <circle class="spinner-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="spinner-path" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </span>
+                <span *ngIf="!loading" class="keyboard-hint">Ctrl+Enter</span>
+              </button>
+            </div>
+      </form>
+    </div>
+  </div>
+</div>
+

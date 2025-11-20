@@ -1,0 +1,248 @@
+<div class="flex h-screen bg-gray-50 overflow-hidden">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 flex flex-col overflow-hidden lg:ml-64">
+    <!-- Header -->
+    <app-header title="Organization Settings" subtitle="Manage your organization details and settings">
+    </app-header>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-y-auto">
+      <div class="org-settings-container">
+        <!-- Loading State -->
+        <div *ngIf="loading" class="loading-state">
+          <svg class="spinner" fill="none" viewBox="0 0 24 24">
+            <circle class="spinner-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="spinner-path" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p>Loading organization details...</p>
+        </div>
+
+        <!-- Error State -->
+        <div *ngIf="error && !loading" class="error-box">
+          <svg class="error-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          </svg>
+          <p>{{ error }}</p>
+          <button (click)="loadOrganizationDetails()" class="retry-btn">Retry</button>
+        </div>
+
+        <!-- Organization Details -->
+        <div *ngIf="!loading && !error && organization" class="org-details">
+          <!-- Info Card -->
+          <div class="info-card">
+            <div class="card-header">
+              <h2>Organization Information</h2>
+              <button (click)="openEditNameModal()" class="edit-btn-header">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                Edit Name
+              </button>
+            </div>
+            
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Organization Name</label>
+                <p class="info-value">{{ organization.name }}</p>
+              </div>
+              
+              <div class="info-item">
+                <label>Organization ID</label>
+                <p class="info-value info-value-code">{{ organization.id }}</p>
+              </div>
+              
+              <div class="info-item">
+                <label>Parent Organization</label>
+                <p class="info-value">{{ getParentOrgName() }}</p>
+              </div>
+              
+              <div class="info-item">
+                <label>Number of Users</label>
+                <p class="info-value info-value-number">{{ organization.userCount }}</p>
+              </div>
+              
+              <div class="info-item">
+                <label>Number of Tasks</label>
+                <p class="info-value info-value-number">{{ organization.taskCount }}</p>
+              </div>
+              
+              <div class="info-item">
+                <label>Created At</label>
+                <p class="info-value">{{ organization.createdAt | date: 'MMM d, y h:mm a' }}</p>
+              </div>
+              
+              <div class="info-item">
+                <label>Owner Name</label>
+                <p class="info-value" *ngIf="organization.owner">{{ organization.owner.name }}</p>
+                <p class="info-value text-muted" *ngIf="!organization.owner">No owner assigned</p>
+              </div>
+              
+              <div class="info-item" *ngIf="organization.owner">
+                <label>Owner Email</label>
+                <p class="info-value">{{ organization.owner.email }}</p>
+              </div>
+            </div>
+
+            <!-- Sub Organizations -->
+            <div *ngIf="getSubOrganizations().length > 0" class="sub-orgs-section">
+              <h3>Sub Organizations</h3>
+              <div class="sub-orgs-list">
+                <div *ngFor="let subOrg of getSubOrganizations()" class="sub-org-item">
+                  <span class="sub-org-name">{{ subOrg.name }}</span>
+                  <span class="sub-org-id">{{ subOrg.id }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions Card -->
+          <div class="actions-card">
+            <h2>Actions</h2>
+            <div class="actions-list">
+              <button (click)="openEditNameModal()" class="action-button edit-action">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                <div>
+                  <div class="action-title">Edit Organization Name</div>
+                  <div class="action-description">Update your organization's display name</div>
+                </div>
+              </button>
+              
+              <button (click)="openTransferModal()" class="action-button transfer-action">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                </svg>
+                <div>
+                  <div class="action-title">Transfer Ownership</div>
+                  <div class="action-description">Transfer organization ownership to another user</div>
+                </div>
+              </button>
+              
+              <button (click)="openDeleteModal()" class="action-button delete-action">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                <div>
+                  <div class="action-title">Delete Organization</div>
+                  <div class="action-description">Permanently delete this organization and all data</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Edit Name Modal -->
+  <div *ngIf="showEditNameModal" class="modal-overlay" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Edit Organization Name</h2>
+        <button (click)="closeModals()" class="close-btn">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <form [formGroup]="editNameForm" (ngSubmit)="updateOrganizationName()" class="modal-body">
+        <div class="form-group">
+          <label>Organization Name <span class="required">*</span></label>
+          <input type="text" formControlName="name" class="form-input" placeholder="Enter organization name" />
+          <div *ngIf="editNameForm.get('name')?.invalid && editNameForm.get('name')?.touched" class="field-error">
+            Organization name is required (minimum 2 characters)
+          </div>
+        </div>
+        <div *ngIf="actionError" class="error-message">{{ actionError }}</div>
+        <div class="modal-actions">
+          <button type="button" (click)="closeModals()" class="btn-secondary">Cancel</button>
+          <button type="submit" [disabled]="!editNameForm.valid || actionLoading" class="btn-primary">
+            <span *ngIf="actionLoading">Updating...</span>
+            <span *ngIf="!actionLoading">Save Changes</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Transfer Ownership Modal -->
+  <div *ngIf="showTransferModal" class="modal-overlay" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Transfer Ownership</h2>
+        <button (click)="closeModals()" class="close-btn">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Select a user to transfer ownership to. You will become an Admin after this transfer.</p>
+        <div class="transfer-users-list">
+          <button
+            *ngFor="let user of users"
+            (click)="selectTransferUser(user)"
+            [disabled]="user.id === currentUser?.id || actionLoading"
+            class="transfer-user-item"
+            [class.disabled]="user.id === currentUser?.id"
+            [class.selected]="selectedTransferUser?.id === user.id"
+          >
+            <div class="user-avatar-small">
+              <span>{{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}</span>
+            </div>
+            <div class="user-info-transfer">
+              <div class="user-name-transfer">{{ user.firstName }} {{ user.lastName }}</div>
+              <div class="user-email-transfer">{{ user.email }}</div>
+            </div>
+            <span *ngIf="user.id === currentUser?.id" class="current-user-badge">You</span>
+            <svg *ngIf="selectedTransferUser?.id === user.id" class="w-5 h-5 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </button>
+        </div>
+        <div *ngIf="actionError" class="error-message">{{ actionError }}</div>
+        <div class="modal-actions">
+          <button type="button" (click)="closeModals()" class="btn-secondary">Cancel</button>
+          <button
+            (click)="confirmTransferOwnership()"
+            [disabled]="!selectedTransferUser || actionLoading"
+            class="btn-primary"
+          >
+            <span *ngIf="actionLoading">Transferring...</span>
+            <span *ngIf="!actionLoading">Transfer Ownership</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Organization Modal -->
+  <div *ngIf="showDeleteModal" class="modal-overlay" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Delete Organization</h2>
+        <button (click)="closeModals()" class="close-btn">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="warning-text">⚠️ <strong>Warning:</strong> This will permanently delete your organization and all associated data (users, tasks, etc.). This action cannot be undone. You will be logged out after deletion.</p>
+        <div *ngIf="actionError" class="error-message">{{ actionError }}</div>
+        <div class="modal-actions">
+          <button type="button" (click)="closeModals()" class="btn-secondary">Cancel</button>
+          <button (click)="deleteOrganization()" [disabled]="actionLoading" class="btn-danger">
+            <span *ngIf="actionLoading">Deleting...</span>
+            <span *ngIf="!actionLoading">Delete Organization</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

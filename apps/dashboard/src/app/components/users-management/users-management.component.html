@@ -1,0 +1,517 @@
+<div class="flex h-screen bg-gray-50 overflow-hidden">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 flex flex-col overflow-hidden lg:ml-64">
+    <!-- Header -->
+    <app-header title="Manage Users" subtitle="View and manage all users in your organization">
+      <div class="header-actions">
+        <button class="header-btn outline" (click)="goToManageUsers()">
+          <svg viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span>Manage Users</span>
+        </button>
+        <button
+          *ngIf="canInviteUsers()"
+          (click)="openInviteModal()"
+          class="header-btn primary"
+        >
+          <svg viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Add User</span>
+        </button>
+        <button
+          *ngIf="currentUser?.role === 'Owner'"
+          (click)="goToAuditLogs()"
+          class="header-btn ghost"
+        >
+          <svg viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m4 0V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10m16 0a2 2 0 01-2 2H7a2 2 0 01-2-2" />
+          </svg>
+          <span>View Audit Logs</span>
+        </button>
+        <button
+          *ngIf="currentUser?.role === 'Owner'"
+          (click)="goToOrganizationSettings()"
+          class="header-btn ghost"
+        >
+          <svg viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317l.856-1.819a1 1 0 011.638-.272l1.09 1.09a1 1 0 00.707.293h1.819a1 1 0 011 1v1.819a1 1 0 00.293.707l1.09 1.09a1 1 0 01-.272 1.638l-1.819.856a1 1 0 00-.555.894V13a1 1 0 00.293.707l1.09 1.09a1 1 0 01-.272 1.638l-1.819.856a1 1 0 00-.555.894V20a1 1 0 01-1 1h-1.819a1 1 0 00-.707.293l-1.09 1.09a1 1 0 01-1.638-.272l-.856-1.819a1 1 0 00-.894-.555H8a1 1 0 00-.707.293l-1.09 1.09a1 1 0 01-1.638-.272l-.856-1.819a1 1 0 00-.894-.555H2a1 1 0 01-1-1v-1.819a1 1 0 00-.293-.707l-1.09-1.09a1 1 0 01.272-1.638l1.819-.856a1 1 0 00.555-.894V11a1 1 0 00-.293-.707l-1.09-1.09a1 1 0 01.272-1.638l1.819-.856a1 1 0 00.555-.894V4a1 1 0 011-1h1.819a1 1 0 00.707-.293l1.09-1.09a1 1 0 011.638.272l.856 1.819a1 1 0 00.894.555H11a1 1 0 00.707-.293l1.09-1.09a1 1 0 011.638.272l.856 1.819a1 1 0 00.894.555H17a1 1 0 00.707-.293l1.09-1.09a1 1 0 01.272-1.638l-1.819-.856a1 1 0 00-.894-.555H15a1 1 0 00-.707.293l-1.09 1.09a1 1 0 01-1.638-.272z" />
+          </svg>
+          <span>Organization Settings</span>
+        </button>
+        <button
+          *ngIf="currentUser?.role === 'Owner'"
+          (click)="openOrgDeleteModal()"
+          class="header-btn danger"
+        >
+          <svg viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span>Delete Organization</span>
+        </button>
+      </div>
+    </app-header>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-y-auto">
+      <div class="users-container">
+        <!-- Loading State -->
+        <div *ngIf="loading" class="loading-state">
+          <svg class="spinner" fill="none" viewBox="0 0 24 24">
+            <circle class="spinner-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="spinner-path" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p>Loading users...</p>
+        </div>
+
+        <!-- Error State -->
+        <div *ngIf="error && !loading" class="error-box">
+          <svg class="error-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          </svg>
+          <p>{{ error }}</p>
+          <button (click)="loadUsers()" class="retry-btn">Retry</button>
+        </div>
+
+        <!-- Users Table -->
+        <div *ngIf="!loading && !error" class="table-wrapper">
+          <div *ngIf="users.length === 0" class="empty-state">
+            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+            <p>No users found</p>
+          </div>
+
+          <table *ngIf="users.length > 0" class="users-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Organization</th>
+                <th>Status</th>
+                <th>Created At</th>
+                <th>Last Login</th>
+                <th class="actions-column">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let user of users" [class.inactive-row]="user.status === 'Inactive'">
+                <td>
+                  <div class="user-name-cell">
+                    <div class="user-avatar-small">
+                      <span>{{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}</span>
+                    </div>
+                    <div>
+                      <div class="user-full-name">{{ user.firstName }} {{ user.lastName }}</div>
+                      <button (click)="openDetailsModal(user)" class="view-details-link">View Details</button>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <span [class]="getRoleBadgeClass(user.role)">{{ user.role }}</span>
+                </td>
+                <td>{{ user.organization?.name || 'N/A' }}</td>
+                <td>
+                  <span [class]="getStatusBadgeClass(user.status)">{{ user.status }}</span>
+                </td>
+                <td>{{ user.createdAt | date: 'MMM d, y' }}</td>
+                <td>
+                  <span *ngIf="user.lastLogin">{{ user.lastLogin | date: 'MMM d, y h:mm a' }}</span>
+                  <span *ngIf="!user.lastLogin" class="text-muted">Never</span>
+                </td>
+                <td>
+                  <div class="table-actions">
+                    <button
+                      (click)="openEditModal(user)"
+                      *ngIf="canEditUser(user)"
+                      class="action-btn edit-btn"
+                      title="Edit user"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                      </svg>
+                    </button>
+                    <button
+                      (click)="openRoleModal(user)"
+                      *ngIf="canChangeRole(user)"
+                      class="action-btn role-btn"
+                      title="Change role"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                      </svg>
+                    </button>
+                    <button
+                      (click)="toggleUserStatus(user)"
+                      *ngIf="canToggleStatus(user)"
+                      class="action-btn status-btn"
+                      [title]="user.status === 'Active' ? 'Deactivate user' : 'Activate user'"
+                    >
+                      <svg *ngIf="user.status === 'Active'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                      </svg>
+                      <svg *ngIf="user.status === 'Inactive'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                    </button>
+                    <button
+                      (click)="openDeleteModal(user)"
+                      *ngIf="canDeleteUser(user)"
+                      class="action-btn delete-btn"
+                      title="Delete user"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Invite User Modal -->
+  <div *ngIf="showInviteModal" class="modal-overlay" (click)="closeModals()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Invite New User</h2>
+        <button (click)="closeModals()" class="close-btn">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <form [formGroup]="inviteForm" (ngSubmit)="inviteUser()" class="modal-body">
+        <div class="form-group">
+          <label>Full Name <span class="required">*</span></label>
+          <input type="text" formControlName="fullName" class="form-input" placeholder="Enter full name" />
+          <div *ngIf="inviteForm.get('fullName')?.invalid && inviteForm.get('fullName')?.touched" class="field-error">
+            Full name is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Email <span class="required">*</span></label>
+          <input type="email" formControlName="email" class="form-input" placeholder="Enter email address" />
+          <div *ngIf="inviteForm.get('email')?.invalid && inviteForm.get('email')?.touched" class="field-error">
+            Valid email is required
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Role <span class="required">*</span></label>
+            <select formControlName="role" class="form-input">
+              <option value="">Select role</option>
+              <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Organization</label>
+            <select formControlName="organizationId" class="form-input" [disabled]="currentUser?.role === 'Admin'">
+              <option value="">Select organization</option>
+              <option *ngFor="let org of organizations" [value]="org.id">
+                {{ getOrganizationDisplayName(org) }}
+              </option>
+            </select>
+            <small *ngIf="currentUser?.role === 'Admin'" class="helper-text">Admins can only invite users to their organization.</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Temporary Password</label>
+          <input
+            type="text"
+            formControlName="password"
+            class="form-input"
+            placeholder="Leave blank to auto-generate"
+          />
+          <small class="helper-text">Set a password to share with the user, or leave empty to auto-generate.</small>
+        </div>
+
+        <div class="invite-info">
+          Invited users receive a temporary password you can share with them. They should change it after first login.
+        </div>
+
+        <div *ngIf="actionError" class="error-message">{{ actionError }}</div>
+
+        <div class="modal-actions">
+          <button type="button" (click)="closeModals()" class="btn-secondary">Cancel</button>
+          <button type="submit" [disabled]="inviteForm.invalid || actionLoading" class="btn-primary">
+            <span *ngIf="actionLoading">Inviting...</span>
+            <span *ngIf="!actionLoading">Send Invite</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- View Details Modal -->
+  <div *ngIf="showDetailsModal" class="modal-overlay" (click)="closeModals()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>User Details</h2>
+        <button (click)="closeModals()" class="close-btn">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedUser">
+        <div class="details-grid">
+          <div class="detail-item">
+            <label>Full Name</label>
+            <p>{{ selectedUser.firstName }} {{ selectedUser.lastName }}</p>
+          </div>
+          <div class="detail-item">
+            <label>Email</label>
+            <p>{{ selectedUser.email }}</p>
+          </div>
+          <div class="detail-item">
+            <label>Role</label>
+            <p><span [class]="getRoleBadgeClass(selectedUser.role)">{{ selectedUser.role }}</span></p>
+          </div>
+          <div class="detail-item">
+            <label>Status</label>
+            <p><span [class]="getStatusBadgeClass(selectedUser.status)">{{ selectedUser.status }}</span></p>
+          </div>
+          <div class="detail-item">
+            <label>Organization</label>
+            <p>{{ selectedUser.organization?.name || 'N/A' }}</p>
+          </div>
+          <div class="detail-item">
+            <label>Created At</label>
+            <p>{{ selectedUser.createdAt | date: 'MMM d, y h:mm a' }}</p>
+          </div>
+          <div class="detail-item">
+            <label>Last Updated</label>
+            <p>{{ selectedUser.updatedAt | date: 'MMM d, y h:mm a' }}</p>
+          </div>
+          <div class="detail-item">
+            <label>Last Login</label>
+            <p *ngIf="selectedUser.lastLogin">{{ selectedUser.lastLogin | date: 'MMM d, y h:mm a' }}</p>
+            <p *ngIf="!selectedUser.lastLogin" class="text-muted">Never</p>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" (click)="closeModals()" class="btn-primary">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div *ngIf="showEditModal" class="modal-overlay" (click)="closeModals()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Edit User</h2>
+        <button (click)="closeModals()" class="close-btn">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <form [formGroup]="editForm" (ngSubmit)="updateUser()" class="modal-body">
+        <div class="form-group">
+          <label>Full Name <span class="required">*</span></label>
+          <input type="text" formControlName="fullName" class="form-input" placeholder="Enter full name" />
+          <div *ngIf="editForm.get('fullName')?.invalid && editForm.get('fullName')?.touched" class="field-error">
+            Full name is required
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Email <span class="required">*</span></label>
+          <input type="email" formControlName="email" class="form-input" placeholder="Enter email address" />
+          <div *ngIf="editForm.get('email')?.invalid && editForm.get('email')?.touched" class="field-error">
+            Valid email is required
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Role <span class="required">*</span></label>
+          <select formControlName="role" class="form-input">
+            <option value="">Select role</option>
+            <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+          </select>
+          <div *ngIf="editForm.get('role')?.invalid && editForm.get('role')?.touched" class="field-error">
+            Role is required
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Organization</label>
+          <select formControlName="organizationId" class="form-input">
+            <option value="">Select organization</option>
+            <option *ngFor="let org of organizations" [value]="org.id">
+              {{ getOrganizationDisplayName(org) }}
+            </option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Status <span class="required">*</span></label>
+          <div class="status-toggle">
+            <button
+              type="button"
+              [class.active]="editForm.get('status')?.value === 'Active'"
+              (click)="editForm.patchValue({ status: 'Active' })"
+              class="toggle-btn toggle-active"
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              [class.active]="editForm.get('status')?.value === 'Inactive'"
+              (click)="editForm.patchValue({ status: 'Inactive' })"
+              class="toggle-btn toggle-inactive"
+            >
+              Inactive
+            </button>
+          </div>
+        </div>
+        
+        <div *ngIf="actionError" class="error-message">{{ actionError }}</div>
+        
+        <div class="modal-actions modal-actions-split">
+          <div class="actions-left">
+            <button
+              type="button"
+              (click)="deleteUserFromEdit()"
+              *ngIf="canDeleteUser(selectedUser!)"
+              class="btn-danger"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+              Delete User
+            </button>
+          </div>
+          <div class="actions-right">
+            <button type="button" (click)="closeModals()" class="btn-secondary">Cancel</button>
+            <button type="submit" [disabled]="!editForm.valid || actionLoading" class="btn-primary">
+              <span *ngIf="actionLoading">Updating...</span>
+              <span *ngIf="!actionLoading">Save Changes</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete User Modal -->
+  <div *ngIf="showDeleteModal" class="modal-overlay" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Delete User</h2>
+        <button (click)="closeModals()" class="close-btn">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong>{{ selectedUser?.firstName }} {{ selectedUser?.lastName }}</strong>? This action cannot be undone.</p>
+        <div *ngIf="actionError" class="error-message">{{ actionError }}</div>
+        <div class="modal-actions">
+          <button type="button" (click)="closeModals()" class="btn-secondary">Cancel</button>
+          <button (click)="deleteUser()" [disabled]="actionLoading" class="btn-danger">
+            <span *ngIf="actionLoading">Deleting...</span>
+            <span *ngIf="!actionLoading">Delete User</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Role Modal -->
+  <div *ngIf="showRoleModal" class="modal-overlay" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Change User Role</h2>
+        <button (click)="closeModals()" class="close-btn">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <form [formGroup]="roleForm" (ngSubmit)="changeRole()" class="modal-body">
+        <div class="form-group">
+          <label>Select Role</label>
+          <select formControlName="role" class="form-input">
+            <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+          </select>
+        </div>
+        <div *ngIf="actionError" class="error-message">{{ actionError }}</div>
+        <div class="modal-actions">
+          <button type="button" (click)="closeModals()" class="btn-secondary">Cancel</button>
+          <button type="submit" [disabled]="!roleForm.valid || actionLoading" class="btn-primary">
+            <span *ngIf="actionLoading">Updating...</span>
+            <span *ngIf="!actionLoading">Change Role</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Transfer Ownership Modal -->
+  <div *ngIf="showTransferModal" class="modal-overlay" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Transfer Ownership</h2>
+        <button (click)="closeModals()" class="close-btn">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to transfer ownership to <strong>{{ selectedUser?.firstName }} {{ selectedUser?.lastName }}</strong>? You will become an Admin after this transfer.</p>
+        <div *ngIf="actionError" class="error-message">{{ actionError }}</div>
+        <div class="modal-actions">
+          <button type="button" (click)="closeModals()" class="btn-secondary">Cancel</button>
+          <button (click)="transferOwnership()" [disabled]="actionLoading" class="btn-primary">
+            <span *ngIf="actionLoading">Transferring...</span>
+            <span *ngIf="!actionLoading">Transfer Ownership</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Organization Modal -->
+  <div *ngIf="showOrgDeleteModal" class="modal-overlay" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Delete Organization</h2>
+        <button (click)="closeModals()" class="close-btn">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="warning-text">⚠️ <strong>Warning:</strong> This will permanently delete your organization and all associated data. This action cannot be undone. You will be logged out after deletion.</p>
+        <div *ngIf="actionError" class="error-message">{{ actionError }}</div>
+        <div class="modal-actions">
+          <button type="button" (click)="closeModals()" class="btn-secondary">Cancel</button>
+          <button (click)="deleteOrganization()" [disabled]="actionLoading" class="btn-danger">
+            <span *ngIf="actionLoading">Deleting...</span>
+            <span *ngIf="!actionLoading">Delete Organization</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

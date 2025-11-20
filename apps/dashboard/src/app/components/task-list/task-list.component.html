@@ -1,0 +1,650 @@
+<div class="task-list-container">
+  
+  <!-- Filters Section -->
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label class="filter-label">
+          <svg class="filter-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          Search
+        </label>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="filterTasks()"
+          placeholder="Search by title or description..."
+          class="filter-input"
+        />
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">
+          <svg class="filter-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          Status
+        </label>
+        <select
+          [(ngModel)]="statusFilter"
+          (ngModelChange)="filterTasks()"
+          class="filter-select"
+        >
+          <option value="">All Statuses</option>
+          <option value="new">New</option>
+          <option value="awaiting_approval">Awaiting Approval</option>
+          <option value="awaiting_board_approval">Awaiting Board Approval</option>
+          <option value="todo">To Do</option>
+          <option value="in_progress">In Progress</option>
+          <option value="verify">Verify</option>
+          <option value="closed">Closed</option>
+          <option value="on_hold">On Hold</option>
+          <option value="waiting_for_customer">Waiting for Customer</option>
+          <option value="waiting_for_support">Waiting for Support</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">
+          <svg class="filter-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+          </svg>
+          Category
+        </label>
+        <select
+          [(ngModel)]="categoryFilter"
+          (ngModelChange)="filterTasks()"
+          class="filter-select"
+        >
+          <option value="">All Categories</option>
+          <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Owner Table View -->
+  <div *ngIf="isOwnerView()" class="owner-table-card">
+    <div class="table-header">
+      <div>
+        <h3>All Tasks (Organization)</h3>
+        <p class="table-subtitle">{{ filteredTasks.length }} total tasks</p>
+      </div>
+      <span class="table-badge">Owner View</span>
+    </div>
+    <div class="tasks-table-wrapper">
+      <table class="tasks-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Assigned To</th>
+            <th>Created At</th>
+            <th>Updated At</th>
+            <th class="actions-column">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let task of filteredTasks">
+            <td>
+              <div class="table-title">{{ task.title }}</div>
+            </td>
+            <td>
+              <div class="table-description">
+                {{ (task.description || '—').length > 50 ? (task.description | slice:0:50) + '...' : (task.description || '—') }}
+              </div>
+            </td>
+            <td>
+              <span *ngIf="task.category" class="table-category">{{ task.category }}</span>
+              <span *ngIf="!task.category" class="text-muted">—</span>
+            </td>
+            <td>
+              <span 
+                class="priority-badge"
+                [class.priority-urgent]="task.priority === 4"
+                [class.priority-high]="task.priority === 3"
+                [class.priority-medium]="task.priority === 2"
+                [class.priority-low]="task.priority === 1"
+              >
+                {{ getPriorityLabel(task.priority) }}
+              </span>
+            </td>
+            <td>
+              <span class="status-chip" [ngClass]="task.status">
+                {{ formatStatus(task.status) }}
+              </span>
+            </td>
+            <td>
+              <div class="user-pill" *ngIf="task.assignedTo; else unassigned">
+                <div class="user-avatar-mini">
+                  {{ getInitials(task.assignedTo) }}
+                </div>
+                <div class="user-pill-info">
+                  <div class="user-pill-name">{{ getUserName(task.assignedTo) }}</div>
+                  <div class="user-pill-email">{{ task.assignedTo.email }}</div>
+                </div>
+              </div>
+              <ng-template #unassigned>
+                <span class="text-muted">Unassigned</span>
+              </ng-template>
+            </td>
+            <td>
+              <div class="table-date">{{ task.createdAt | date: 'MMM d, y' }}</div>
+              <div class="table-time">{{ task.createdAt | date: 'h:mm a' }}</div>
+            </td>
+            <td>
+              <div class="table-date">{{ task.updatedAt | date: 'MMM d, y' }}</div>
+              <div class="table-time">{{ task.updatedAt | date: 'h:mm a' }}</div>
+            </td>
+            <td>
+              <div class="table-actions">
+                <button (click)="openEditModal(task)" class="action-btn action-btn-edit" title="Edit task" type="button">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                  </svg>
+                </button>
+                <button (click)="deleteTask(task.id)" class="action-btn action-btn-delete" title="Delete task" type="button">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filteredTasks.length === 0">
+            <td colspan="9" class="empty-row">No tasks found for the selected filters.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Kanban Board -->
+  <div class="kanban-board">
+    
+    <!-- New Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title-group">
+          <div class="column-indicator column-indicator-new"></div>
+          <h3 class="column-title">
+            <span class="column-title-label">New</span>
+            <span class="column-title-sub">Intake</span>
+          </h3>
+        </div>
+        <span class="column-badge column-badge-blue">
+          {{ getTasksByStatus(TaskStatus.NEW).length }}
+        </span>
+      </div>
+      <div
+        class="column-body"
+        (dragover)="onDragOver($event, TaskStatus.NEW)"
+        (dragenter)="onDragEnter($event, TaskStatus.NEW)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event, TaskStatus.NEW)"
+        [class.column-body-drag-over]="dragOverColumn === TaskStatus.NEW"
+        [class.column-body-drag-available]="isDragging && draggedTask && draggedTask.status !== TaskStatus.NEW && canDropToStatus(draggedTask.status, TaskStatus.NEW)"
+      >
+        <app-task-card
+          *ngFor="let task of getTasksByStatus(TaskStatus.NEW)"
+          [task]="task"
+          [draggable]="canEditTask()"
+          [canEdit]="canEditTask()"
+          [canDelete]="canDeleteTask()"
+          (onClick)="openEditModal(task)"
+          (onEdit)="openEditModal(task)"
+          (onDelete)="deleteTask(task.id)"
+          (onDragStartEvent)="onTaskDragStart($event)"
+          (onDragEndEvent)="onTaskDragEnd()"
+        ></app-task-card>
+        <div *ngIf="getTasksByStatus(TaskStatus.NEW).length === 0" class="empty-state">
+          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <p>No tasks in this column</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Awaiting Approval Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title-group">
+          <div class="column-indicator column-indicator-awaiting-approval"></div>
+          <h3 class="column-title">
+            <span class="column-title-label">Awaiting Approval</span>
+            <span class="column-title-sub">Manager Review</span>
+          </h3>
+        </div>
+        <span class="column-badge column-badge-orange">
+          {{ getTasksByStatus(TaskStatus.AWAITING_APPROVAL).length }}
+        </span>
+      </div>
+      <div
+        class="column-body"
+        (dragover)="onDragOver($event, TaskStatus.AWAITING_APPROVAL)"
+        (dragenter)="onDragEnter($event, TaskStatus.AWAITING_APPROVAL)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event, TaskStatus.AWAITING_APPROVAL)"
+        [class.column-body-drag-over]="dragOverColumn === TaskStatus.AWAITING_APPROVAL"
+        [class.column-body-drag-available]="isDragging && draggedTask && draggedTask.status !== TaskStatus.AWAITING_APPROVAL && canDropToStatus(draggedTask.status, TaskStatus.AWAITING_APPROVAL)"
+      >
+        <app-task-card
+          *ngFor="let task of getTasksByStatus(TaskStatus.AWAITING_APPROVAL)"
+          [task]="task"
+          [draggable]="canEditTask()"
+          [canEdit]="canEditTask()"
+          [canDelete]="canDeleteTask()"
+          (onClick)="openEditModal(task)"
+          (onEdit)="openEditModal(task)"
+          (onDelete)="deleteTask(task.id)"
+          (onDragStartEvent)="onTaskDragStart($event)"
+          (onDragEndEvent)="onTaskDragEnd()"
+        ></app-task-card>
+        <div *ngIf="getTasksByStatus(TaskStatus.AWAITING_APPROVAL).length === 0" class="empty-state">
+          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <p>No tasks in this column</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Awaiting Board Approval Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title-group">
+          <div class="column-indicator column-indicator-awaiting-board-approval"></div>
+          <h3 class="column-title">
+            <span class="column-title-label">Awaiting Board Approval</span>
+            <span class="column-title-sub">Leadership Review</span>
+          </h3>
+        </div>
+        <span class="column-badge column-badge-dark-orange">
+          {{ getTasksByStatus(TaskStatus.AWAITING_BOARD_APPROVAL).length }}
+        </span>
+      </div>
+      <div
+        class="column-body"
+        (dragover)="onDragOver($event, TaskStatus.AWAITING_BOARD_APPROVAL)"
+        (dragenter)="onDragEnter($event, TaskStatus.AWAITING_BOARD_APPROVAL)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event, TaskStatus.AWAITING_BOARD_APPROVAL)"
+        [class.column-body-drag-over]="dragOverColumn === TaskStatus.AWAITING_BOARD_APPROVAL"
+        [class.column-body-drag-available]="isDragging && draggedTask && draggedTask.status !== TaskStatus.AWAITING_BOARD_APPROVAL && canDropToStatus(draggedTask.status, TaskStatus.AWAITING_BOARD_APPROVAL)"
+      >
+        <app-task-card
+          *ngFor="let task of getTasksByStatus(TaskStatus.AWAITING_BOARD_APPROVAL)"
+          [task]="task"
+          [draggable]="canEditTask()"
+          [canEdit]="canEditTask()"
+          [canDelete]="canDeleteTask()"
+          (onClick)="openEditModal(task)"
+          (onEdit)="openEditModal(task)"
+          (onDelete)="deleteTask(task.id)"
+          (onDragStartEvent)="onTaskDragStart($event)"
+          (onDragEndEvent)="onTaskDragEnd()"
+        ></app-task-card>
+        <div *ngIf="getTasksByStatus(TaskStatus.AWAITING_BOARD_APPROVAL).length === 0" class="empty-state">
+          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <p>No tasks in this column</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- To Do Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title-group">
+          <div class="column-indicator column-indicator-todo"></div>
+          <h3 class="column-title">
+            <span class="column-title-label">To Do</span>
+            <span class="column-title-sub">Ready Queue</span>
+          </h3>
+        </div>
+        <span class="column-badge column-badge-gray">
+          {{ getTasksByStatus(TaskStatus.TODO).length }}
+        </span>
+      </div>
+      <div
+        class="column-body"
+        (dragover)="onDragOver($event, TaskStatus.TODO)"
+        (dragenter)="onDragEnter($event, TaskStatus.TODO)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event, TaskStatus.TODO)"
+        [class.column-body-drag-over]="dragOverColumn === TaskStatus.TODO"
+        [class.column-body-drag-available]="isDragging && draggedTask && draggedTask.status !== TaskStatus.TODO && canDropToStatus(draggedTask.status, TaskStatus.TODO)"
+      >
+        <app-task-card
+          *ngFor="let task of getTasksByStatus(TaskStatus.TODO)"
+          [task]="task"
+          [draggable]="canEditTask()"
+          [canEdit]="canEditTask()"
+          [canDelete]="canDeleteTask()"
+          (onClick)="openEditModal(task)"
+          (onEdit)="openEditModal(task)"
+          (onDelete)="deleteTask(task.id)"
+          (onDragStartEvent)="onTaskDragStart($event)"
+          (onDragEndEvent)="onTaskDragEnd()"
+        ></app-task-card>
+        <div *ngIf="getTasksByStatus(TaskStatus.TODO).length === 0" class="empty-state">
+          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <p>No tasks in this column</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- In Progress Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title-group">
+          <div class="column-indicator column-indicator-progress"></div>
+          <h3 class="column-title">
+            <span class="column-title-label">In Progress</span>
+            <span class="column-title-sub">Execution</span>
+          </h3>
+        </div>
+        <span class="column-badge column-badge-yellow">
+          {{ getTasksByStatus(TaskStatus.IN_PROGRESS).length }}
+        </span>
+      </div>
+      <div
+        class="column-body"
+        (dragover)="onDragOver($event, TaskStatus.IN_PROGRESS)"
+        (dragenter)="onDragEnter($event, TaskStatus.IN_PROGRESS)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event, TaskStatus.IN_PROGRESS)"
+        [class.column-body-drag-over]="dragOverColumn === TaskStatus.IN_PROGRESS"
+        [class.column-body-drag-available]="isDragging && draggedTask && draggedTask.status !== TaskStatus.IN_PROGRESS && canDropToStatus(draggedTask.status, TaskStatus.IN_PROGRESS)"
+      >
+        <app-task-card
+          *ngFor="let task of getTasksByStatus(TaskStatus.IN_PROGRESS)"
+          [task]="task"
+          [draggable]="canEditTask()"
+          [canEdit]="canEditTask()"
+          [canDelete]="canDeleteTask()"
+          (onClick)="openEditModal(task)"
+          (onEdit)="openEditModal(task)"
+          (onDelete)="deleteTask(task.id)"
+          (onDragStartEvent)="onTaskDragStart($event)"
+          (onDragEndEvent)="onTaskDragEnd()"
+        ></app-task-card>
+        <div *ngIf="getTasksByStatus(TaskStatus.IN_PROGRESS).length === 0" class="empty-state">
+          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <p>No tasks in this column</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verify Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title-group">
+          <div class="column-indicator column-indicator-verify"></div>
+          <h3 class="column-title">
+            <span class="column-title-label">Verify</span>
+            <span class="column-title-sub">Quality Gate</span>
+          </h3>
+        </div>
+        <span class="column-badge column-badge-purple">
+          {{ getTasksByStatus(TaskStatus.VERIFY).length }}
+        </span>
+      </div>
+      <div
+        class="column-body"
+        (dragover)="onDragOver($event, TaskStatus.VERIFY)"
+        (dragenter)="onDragEnter($event, TaskStatus.VERIFY)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event, TaskStatus.VERIFY)"
+        [class.column-body-drag-over]="dragOverColumn === TaskStatus.VERIFY"
+        [class.column-body-drag-available]="isDragging && draggedTask && draggedTask.status !== TaskStatus.VERIFY && canDropToStatus(draggedTask.status, TaskStatus.VERIFY)"
+      >
+        <app-task-card
+          *ngFor="let task of getTasksByStatus(TaskStatus.VERIFY)"
+          [task]="task"
+          [draggable]="canEditTask()"
+          [canEdit]="canEditTask()"
+          [canDelete]="canDeleteTask()"
+          (onClick)="openEditModal(task)"
+          (onEdit)="openEditModal(task)"
+          (onDelete)="deleteTask(task.id)"
+          (onDragStartEvent)="onTaskDragStart($event)"
+          (onDragEndEvent)="onTaskDragEnd()"
+        ></app-task-card>
+        <div *ngIf="getTasksByStatus(TaskStatus.VERIFY).length === 0" class="empty-state">
+          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <p>No tasks in this column</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Closed Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title-group">
+          <div class="column-indicator column-indicator-done"></div>
+          <h3 class="column-title">
+            <span class="column-title-label">Closed</span>
+            <span class="column-title-sub">Completed</span>
+          </h3>
+        </div>
+        <span class="column-badge column-badge-green">
+          {{ getTasksByStatus(TaskStatus.CLOSED).length }}
+        </span>
+      </div>
+      <div
+        class="column-body"
+        (dragover)="onDragOver($event, TaskStatus.CLOSED)"
+        (dragenter)="onDragEnter($event, TaskStatus.CLOSED)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event, TaskStatus.CLOSED)"
+        [class.column-body-drag-over]="dragOverColumn === TaskStatus.CLOSED"
+        [class.column-body-drag-available]="isDragging && draggedTask && draggedTask.status !== TaskStatus.CLOSED && canDropToStatus(draggedTask.status, TaskStatus.CLOSED)"
+      >
+        <app-task-card
+          *ngFor="let task of getTasksByStatus(TaskStatus.CLOSED)"
+          [task]="task"
+          [draggable]="canEditTask()"
+          [canEdit]="canEditTask()"
+          [canDelete]="canDeleteTask()"
+          (onClick)="openEditModal(task)"
+          (onEdit)="openEditModal(task)"
+          (onDelete)="deleteTask(task.id)"
+          (onDragStartEvent)="onTaskDragStart($event)"
+          (onDragEndEvent)="onTaskDragEnd()"
+        ></app-task-card>
+        <div *ngIf="getTasksByStatus(TaskStatus.CLOSED).length === 0" class="empty-state">
+          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+          </svg>
+          <p>No tasks in this column</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- On Hold Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title-group">
+          <div class="column-indicator column-indicator-on-hold"></div>
+          <h3 class="column-title">
+            <span class="column-title-label">On Hold</span>
+            <span class="column-title-sub">Paused</span>
+          </h3>
+        </div>
+        <span class="column-badge column-badge-red">
+          {{ getTasksByStatus(TaskStatus.ON_HOLD).length }}
+        </span>
+      </div>
+      <div
+        class="column-body"
+        (dragover)="onDragOver($event, TaskStatus.ON_HOLD)"
+        (dragenter)="onDragEnter($event, TaskStatus.ON_HOLD)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event, TaskStatus.ON_HOLD)"
+        [class.column-body-drag-over]="dragOverColumn === TaskStatus.ON_HOLD"
+        [class.column-body-drag-available]="isDragging && draggedTask && draggedTask.status !== TaskStatus.ON_HOLD && canDropToStatus(draggedTask.status, TaskStatus.ON_HOLD)"
+      >
+        <app-task-card
+          *ngFor="let task of getTasksByStatus(TaskStatus.ON_HOLD)"
+          [task]="task"
+          [draggable]="canEditTask()"
+          [canEdit]="canEditTask()"
+          [canDelete]="canDeleteTask()"
+          (onClick)="openEditModal(task)"
+          (onEdit)="openEditModal(task)"
+          (onDelete)="deleteTask(task.id)"
+          (onDragStartEvent)="onTaskDragStart($event)"
+          (onDragEndEvent)="onTaskDragEnd()"
+        ></app-task-card>
+        <div *ngIf="getTasksByStatus(TaskStatus.ON_HOLD).length === 0" class="empty-state">
+          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <p>No tasks in this column</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Waiting for Customer Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title-group">
+          <div class="column-indicator column-indicator-waiting-for-customer"></div>
+          <h3 class="column-title">
+            <span class="column-title-label">Waiting for Customer</span>
+            <span class="column-title-sub">Customer Action</span>
+          </h3>
+        </div>
+        <span class="column-badge column-badge-purple-light">
+          {{ getTasksByStatus(TaskStatus.WAITING_FOR_CUSTOMER).length }}
+        </span>
+      </div>
+      <div
+        class="column-body"
+        (dragover)="onDragOver($event, TaskStatus.WAITING_FOR_CUSTOMER)"
+        (dragenter)="onDragEnter($event, TaskStatus.WAITING_FOR_CUSTOMER)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event, TaskStatus.WAITING_FOR_CUSTOMER)"
+        [class.column-body-drag-over]="dragOverColumn === TaskStatus.WAITING_FOR_CUSTOMER"
+        [class.column-body-drag-available]="isDragging && draggedTask && draggedTask.status !== TaskStatus.WAITING_FOR_CUSTOMER && canDropToStatus(draggedTask.status, TaskStatus.WAITING_FOR_CUSTOMER)"
+      >
+        <app-task-card
+          *ngFor="let task of getTasksByStatus(TaskStatus.WAITING_FOR_CUSTOMER)"
+          [task]="task"
+          [draggable]="canEditTask()"
+          [canEdit]="canEditTask()"
+          [canDelete]="canDeleteTask()"
+          (onClick)="openEditModal(task)"
+          (onEdit)="openEditModal(task)"
+          (onDelete)="deleteTask(task.id)"
+          (onDragStartEvent)="onTaskDragStart($event)"
+          (onDragEndEvent)="onTaskDragEnd()"
+        ></app-task-card>
+        <div *ngIf="getTasksByStatus(TaskStatus.WAITING_FOR_CUSTOMER).length === 0" class="empty-state">
+          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <p>No tasks in this column</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Waiting for Support Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title-group">
+          <div class="column-indicator column-indicator-waiting-for-support"></div>
+          <h3 class="column-title">
+            <span class="column-title-label">Waiting for Support</span>
+            <span class="column-title-sub">Support Action</span>
+          </h3>
+        </div>
+        <span class="column-badge column-badge-pink">
+          {{ getTasksByStatus(TaskStatus.WAITING_FOR_SUPPORT).length }}
+        </span>
+      </div>
+      <div
+        class="column-body"
+        (dragover)="onDragOver($event, TaskStatus.WAITING_FOR_SUPPORT)"
+        (dragenter)="onDragEnter($event, TaskStatus.WAITING_FOR_SUPPORT)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event, TaskStatus.WAITING_FOR_SUPPORT)"
+        [class.column-body-drag-over]="dragOverColumn === TaskStatus.WAITING_FOR_SUPPORT"
+        [class.column-body-drag-available]="isDragging && draggedTask && draggedTask.status !== TaskStatus.WAITING_FOR_SUPPORT && canDropToStatus(draggedTask.status, TaskStatus.WAITING_FOR_SUPPORT)"
+      >
+        <app-task-card
+          *ngFor="let task of getTasksByStatus(TaskStatus.WAITING_FOR_SUPPORT)"
+          [task]="task"
+          [draggable]="canEditTask()"
+          [canEdit]="canEditTask()"
+          [canDelete]="canDeleteTask()"
+          (onClick)="openEditModal(task)"
+          (onEdit)="openEditModal(task)"
+          (onDelete)="deleteTask(task.id)"
+          (onDragStartEvent)="onTaskDragStart($event)"
+          (onDragEndEvent)="onTaskDragEnd()"
+        ></app-task-card>
+        <div *ngIf="getTasksByStatus(TaskStatus.WAITING_FOR_SUPPORT).length === 0" class="empty-state">
+          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <p>No tasks in this column</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Card -->
+  <div class="stats-card">
+    <h3 class="stats-title">Progress Overview</h3>
+    <div class="stats-content">
+      <div class="progress-section">
+        <div class="progress-header">
+          <span class="progress-label">Completion Rate</span>
+          <span class="progress-value">{{ getCompletionPercentage() }}%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="getCompletionPercentage()"></div>
+        </div>
+      </div>
+        <div class="stats-grid">
+        <div class="stat-item stat-item-todo">
+          <div class="stat-number">{{ getTasksByStatus('new').length }}</div>
+          <div class="stat-label">New</div>
+        </div>
+        <div class="stat-item stat-item-progress">
+          <div class="stat-number">{{ getTasksByStatus('in_progress').length }}</div>
+          <div class="stat-label">In Progress</div>
+        </div>
+        <div class="stat-item stat-item-done">
+          <div class="stat-number">{{ getTasksByStatus('closed').length }}</div>
+          <div class="stat-label">Closed</div>
+        </div>
+        <div class="stat-item stat-item-hold">
+          <div class="stat-number">{{ getTasksByStatus('on_hold').length + getTasksByStatus('waiting_for_customer').length + getTasksByStatus('waiting_for_support').length }}</div>
+          <div class="stat-label">Waiting</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Task Form Modal -->
+<app-task-form
+  *ngIf="showModal"
+  [task]="selectedTask"
+  (close)="closeModal()"
+  (saved)="loadTasks()"
+></app-task-form>
+

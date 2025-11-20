@@ -1,0 +1,128 @@
+.notification-wrapper {
+  position: relative;
+}
+
+.notification-button {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-button:hover {
+  border-color: #6366f1;
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+}
+
+.bell-icon {
+  width: 20px;
+  height: 20px;
+  color: #4b5563;
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #dc2626;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 6px;
+}
+
+.notification-dropdown {
+  position: absolute;
+  right: 0;
+  top: 110%;
+  width: 320px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+  padding: 16px;
+  z-index: 40;
+}
+
+.dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.dropdown-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #111827;
+}
+
+.dropdown-header p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.role-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.notification-list {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notification-item {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  cursor: default;
+  transition: background 0.2s ease;
+}
+
+.notification-item:hover {
+  background: #eef2ff;
+}
+
+.notification-message {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.notification-time {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 24px 12px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.empty-icon {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+

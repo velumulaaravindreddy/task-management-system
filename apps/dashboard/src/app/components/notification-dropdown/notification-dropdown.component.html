@@ -1,0 +1,35 @@
+<div class="notification-wrapper" *ngIf="currentUser">
+  <button class="notification-button" (click)="toggle()">
+    <svg class="bell-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+    </svg>
+    <span class="badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+  </button>
+
+  <div class="notification-dropdown" *ngIf="isOpen">
+    <div class="dropdown-header">
+      <div>
+        <h4>Notifications</h4>
+        <p *ngIf="notifications.length === 0">You're all caught up!</p>
+      </div>
+      <span class="role-pill">{{ currentUser.role }}</span>
+    </div>
+    <div class="notification-list">
+      <div
+        class="notification-item"
+        *ngFor="let notification of notifications; trackBy: trackById"
+        (mouseenter)="markAsRead(notification)"
+      >
+        <p class="notification-message">{{ notification.message }}</p>
+        <span class="notification-time">{{ notification.createdAt | date: 'MMM d, h:mm a' }}</span>
+      </div>
+      <div class="empty-state" *ngIf="notifications.length === 0">
+        <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m-8 5h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+        </svg>
+        <p>No new notifications</p>
+      </div>
+    </div>
+  </div>
+</div>
+
