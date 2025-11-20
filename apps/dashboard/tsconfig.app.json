@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "types": [],
+    "baseUrl": "../../",
+    "paths": {
+      "@task-management-system/data": ["libs/data/src/index.ts"],
+      "@task-management-system/auth": ["libs/auth/src/index.ts"],
+      "react-native-sqlite-storage": ["apps/dashboard/src/app/stubs/react-native-sqlite-storage.ts"]
+    }
+  },
+  "files": ["src/main.ts", "src/app/stubs/react-native-sqlite-storage.ts"],
+  "include": ["src/**/*.d.ts"]
+}
+

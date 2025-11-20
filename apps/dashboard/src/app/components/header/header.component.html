@@ -1,0 +1,89 @@
+<header class="header">
+  <div class="header-content">
+    <div class="header-text">
+      <h2 class="header-title">{{ title }}</h2>
+      <p class="header-subtitle">{{ subtitle }}</p>
+    </div>
+    <div class="header-actions">
+      <ng-content></ng-content>
+      
+      <button class="workflow-btn" (click)="openWorkflowModal()" title="View Workflow Diagram">
+        <svg class="workflow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+        <span class="workflow-label">Workflow</span>
+      </button>
+
+      <app-notification-dropdown></app-notification-dropdown>
+
+      <!-- Dark Mode Toggle -->
+      <button 
+        class="theme-toggle-btn" 
+        (click)="toggleDarkMode()" 
+        [title]="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+        [attr.aria-label]="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+      >
+        <svg *ngIf="!isDarkMode" class="theme-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+        <svg *ngIf="isDarkMode" class="theme-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+      </button>
+      <div class="profile-wrapper" *ngIf="user">
+        <button class="profile-button" (click)="toggleMenu()">
+          <div class="profile-info">
+            <span class="profile-name">{{ user.firstName }} {{ user.lastName }}</span>
+            <span class="profile-role">{{ user.role }}</span>
+          </div>
+          <div class="profile-avatar">
+            {{ user.firstName?.charAt(0) }}{{ user.lastName?.charAt(0) }}
+          </div>
+        </button>
+        <div class="profile-menu" *ngIf="menuOpen">
+          <button class="profile-menu-item" (click)="navigate('/profile')">
+            <span>My Profile</span>
+          </button>
+          <button class="profile-menu-item" (click)="navigate('/users')" *ngIf="user.role === 'Owner' || user.role === 'Admin'">
+            <span>Manage Users</span>
+          </button>
+          <button class="profile-menu-item" (click)="navigate('/organization')" *ngIf="user.role === 'Owner'">
+            <span>Organization Settings</span>
+          </button>
+          <button class="profile-menu-item" (click)="navigate('/audit-log')" *ngIf="user.role === 'Owner'">
+            <span>Audit Log</span>
+          </button>
+          <button class="profile-menu-item logout" (click)="logout()">
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Workflow Diagram Modal -->
+<div class="workflow-modal-overlay" *ngIf="workflowModalOpen" (click)="closeWorkflowModal()">
+  <div class="workflow-modal-container" (click)="$event.stopPropagation()">
+    <div class="workflow-modal-header">
+      <div class="workflow-modal-title-group">
+        <svg class="workflow-modal-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+        <div>
+          <h3 class="workflow-modal-title">Task Workflow</h3>
+          <p class="workflow-modal-subtitle">Visual representation of all task statuses and transitions</p>
+        </div>
+      </div>
+      <button (click)="closeWorkflowModal()" class="workflow-modal-close">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="workflow-modal-body">
+      <app-workflow-diagram></app-workflow-diagram>
+    </div>
+  </div>
+</div>
+

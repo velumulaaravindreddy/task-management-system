@@ -1,0 +1,49 @@
+.audit-container {
+  padding: 32px;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: #f8fafc;
+}
+
+.audit-card {
+  background: white;
+  border-radius: 16px;
+  border: 2px solid #e5e7eb;
+  padding: 32px;
+  max-width: 700px;
+  text-align: center;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.audit-card h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.subtitle {
+  margin: 12px 0 24px;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.placeholder {
+  border: 2px dashed #c7d2fe;
+  border-radius: 12px;
+  padding: 32px;
+  background: #eef2ff;
+  color: #3730a3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.placeholder-icon {
+  width: 48px;
+  height: 48px;
+}
+
